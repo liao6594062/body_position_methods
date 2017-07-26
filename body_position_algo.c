@@ -9,7 +9,7 @@
 #define CAPTURE_SIZE                                                 50          //the size of capture body position 
 #define EVERY_VARIABLE_FEATURE_NUM                                   3           // sum  features numbers 
  
-#define diff_bodyPosition_amplitudeValue_ThresholdValue              20000.00    // the threshold value of body position amplitudeValue   
+#define DIFF_BODYPOSITION_AMPLITUDEVALUE_THRESHODVALUE               20000.00    // the threshold value of body position amplitudeValue   
 #define STAND_BODYPOSITION_THRESHOD_VALUE                           -11042.00f   //the threshold value of stand body position
 #define BACK_BODYPOSITION_THRESHOD_VALUE                             11788.00f   //the threshold value of back body position 
 #define LEFT_BODYPOSITION_THRESHOD_VALUE                             11714.00f   //the threshold value of left body position 
@@ -17,34 +17,37 @@
 #define RIGHT_BODYPOSITION_THRESHOD_VALUE                           -11783.00f   //the threshold value of right body position
 
 
-typedef struct rev_data_s{
-	
-	float* gx_movingFilterData;                                                 //save movingfilter data
-	float* gy_movingFilterData; 
-	float* gz_movingFilterData;
+typedef struct rev_data_s
+{
+	float* gx_movingfilter_data;                                                 //save movingfilter data
+	float* gy_movingfilter_data; 
+	float* gz_movingfilter_data;
 	
 	float feature_value[EVERY_VARIABLE_FEATURE_NUM];                            //save feature value 
 	float former_feature_value[EVERY_VARIABLE_FEATURE_NUM];                     //save former feature value
 	
 	float diff_body_position_amplitude_value;                                   //body position amplitude value 
 	int precise_body_position_style;	                                          //precise body position style
-	int bodyPosition_amplitudeValue_rank;                                    //body position amplitude rank
-		 
-}rev_Data_t;                                                                  //define a struct for receiving data
+	int body_position_amplitude_rank;
+	                                                                            //body position amplitude rank	 
+}rev_data_t;                                                                    //define a struct for receiving data
 
 
 //{create and initialize working space: start}--------------------
 //{get size of working space}
-int bp_get_size_of_space() {
+int bp_get_size_of_space() 
+{
 	int size;
-	size = sizeof(Rev_Data);
+	
+	size = sizeof(rev_data_t);
+	
 	return size;
 }
 
 //{create and initialize working space}
-unsigned char * bp_create_and_initialize_space() {
-
-	unsigned char* space;
+unsigned char *bp_create_and_initialize_space() 
+{
+	unsigned char *space;
 
 	int size = bp_get_size_of_space();
 
@@ -58,45 +61,45 @@ unsigned char * bp_create_and_initialize_space() {
 }
 
 //{initialize working space}
-void bp_initialize_space(unsigned char* space) {
-	Rev_Data *revData_p = (Rev_Data*)space;
+void bp_initialize_space(unsigned char *space) 
+{
+	rev_data_t *rev_data_p = (rev_data_t*)space;
 	int i;
 
-	revData_p->precise_bodyPosition_style = 0;
-	revData_p->diff_bodyPosition_amplitudeValue = 0.0;  
-	revData_p->bodyPosition_amplitudeValue_rank = 0;
+	rev_data_p->precise_body_position_style = 0;
+	rev_data_p->diff_body_position_amplitude_value = 0.0;  
+	rev_data_p->body_position_amplitude_rank = 0;
 
-	for(i = 0; i < EVERY_VARIABLE_FEATURE_NUM; i ++)
+	for(i = 0; i < EVERY_VARIABLE_FEATURE_NUM; i++)
 	 {
-	 	revData_p->featureValue[i] = 0.0;
-	 	revData_p->former_featureValue[i] = 0.0;
+	 	rev_data_p->feature_value[i] = 0.0;
+	 	rev_data_p->former_feature_value[i] = 0.0;
 	 }
 
-    revData_p->gx_movingFilterData = (float*)malloc(sizeof(float) * CAPTURE_SIZE);
-    revData_p->gy_movingFilterData = (float*)malloc(sizeof(float) * CAPTURE_SIZE);
-    revData_p->gz_movingFilterData = (float*)malloc(sizeof(float) * CAPTURE_SIZE);
-
+    rev_data_p->gx_movingfilter_data = (float*)malloc(sizeof(float) * CAPTURE_SIZE);
+    rev_data_p->gy_movingfilter_data = (float*)malloc(sizeof(float) * CAPTURE_SIZE);
+    rev_data_p->gz_movingfilter_data = (float*)malloc(sizeof(float) * CAPTURE_SIZE);
 
 }
 //{create and initialize working space: end}----------------------
 
 
-void FreePoint(unsigned char* space)
+void free_point(unsigned char *space)
 {
-	Rev_Data* revData_p = (Rev_Data*)space;
+	rev_data_t* rev_data_p = (rev_data_t*)space;
 	
-	free(revData_p->gx_movingFilterData);
-	free(revData_p->gy_movingFilterData);
-	free(revData_p->gz_movingFilterData);
+	free(rev_data_p->gx_movingfilter_data);
+	free(rev_data_p->gy_movingfilter_data);
+	free(rev_data_p->gz_movingfilter_data);
 }
 
 
-static float   comput_meanValue(float* data_vector , int start , int len)
+static float comput_mean_value(float *data_vector , int start , int len)
 {
    float sum = 0.0;
    int index = 0;
    
-   for(index = start ; index < start + len ; index ++)
+   for(index = start ; index < start + len ; index++)
    {
    	  sum = sum + data_vector[index];
    }
@@ -106,31 +109,31 @@ static float   comput_meanValue(float* data_vector , int start , int len)
 }
 
 
-static void   multiply_moving_filter(float* initdata, int data_len, float* movingFilterData) 
+static void multiply_moving_filter(float *initdata, int data_len, float *movingfilter_data) 
 {
 	int filter_num = 0 , vector_index = 0;
-	float*  index = (float*)malloc(sizeof(float) * data_len);
+	float *index = (float*)malloc(sizeof(float) * data_len);
 	
-	for(vector_index = 0 ; vector_index < data_len ; vector_index ++)
+	for(vector_index = 0; vector_index < data_len; vector_index++)
 	{		
 		index[vector_index] = initdata[vector_index];  
 	}
 	
-	for(vector_index = 0 ; vector_index < FILTER_LEN-1 ; vector_index ++)
+	for(vector_index = 0; vector_index < FILTER_LEN-1; vector_index++)
 	{		
-		movingFilterData[vector_index] = index[vector_index];  
+		movingfilter_data[vector_index] = index[vector_index];  
 	}
 	
-	for(filter_num = 0 ; filter_num < FILTER_TIMES ; filter_num ++)   
+	for(filter_num = 0; filter_num  < FILTER_TIMES; filter_num++)   
 	{ 
-		for(vector_index = FILTER_LEN-1 ; vector_index < CAPTURE_SIZE ; vector_index ++)
+		for(vector_index = FILTER_LEN-1; vector_index < CAPTURE_SIZE; vector_index++)
 		{ 
-			movingFilterData[vector_index] = comput_meanValue(index , vector_index - FILTER_LEN + 1 , FILTER_LEN); 
+			movingfilter_data[vector_index] = comput_mean_value(index, vector_index - FILTER_LEN + 1, FILTER_LEN); 
 		}
 		
-		for(vector_index = 0 ; vector_index < CAPTURE_SIZE ; vector_index ++)
+		for(vector_index = 0; vector_index < CAPTURE_SIZE; vector_index++)
 		{
-			index[vector_index] = movingFilterData[vector_index]; 
+			index[vector_index] = movingfilter_data[vector_index]; 
 		}
 	}
 	
@@ -139,50 +142,49 @@ static void   multiply_moving_filter(float* initdata, int data_len, float* movin
 }
 
 
-
-static void  getFeatureValue(unsigned char* space)
+static void  get_feature_value(unsigned char *space)
 {
-    Rev_Data* revData_p = (Rev_Data*)space;
+    rev_data_t* rev_data_p = (rev_data_t*)space;
     
-	revData_p->featureValue[0] = comput_meanValue(revData_p->gx_movingFilterData , 0 , CAPTURE_SIZE);//compute mean-value 
-	revData_p->featureValue[1] = comput_meanValue(revData_p->gy_movingFilterData , 0 , CAPTURE_SIZE);///compute mean-value  
-	revData_p->featureValue[2] = comput_meanValue(revData_p->gz_movingFilterData , 0 , CAPTURE_SIZE);///compute mean-value 	
+	rev_data_p->feature_value[0] = comput_mean_value(rev_data_p->gx_movingfilter_data, 0, CAPTURE_SIZE);//compute mean-value 
+	rev_data_p->feature_value[1] = comput_mean_value(rev_data_p->gy_movingfilter_data, 0, CAPTURE_SIZE);///compute mean-value  
+	rev_data_p->feature_value[2] = comput_mean_value(rev_data_p->gz_movingfilter_data, 0, CAPTURE_SIZE);///compute mean-value 	
 } 
 
-static void copyFeatureValue(unsigned char* space)
+static void copy_feature_value(unsigned char *space)
 {
-	Rev_Data* revData_p = (Rev_Data*)space;  
+	rev_data_t* rev_data_p = (rev_data_t*)space;  
 	int index;
 	
-	for(index = 0; index < EVERY_VARIABLE_FEATURE_NUM; index ++)
+	for(index = 0; index < EVERY_VARIABLE_FEATURE_NUM; index++)
 	{
-		revData_p->former_featureValue[index] = revData_p->featureValue[index]; 
+		rev_data_p->former_feature_value[index] = rev_data_p->feature_value[index]; 
 	}
 }
 
 
-static void getDiffAmplitudeValue(unsigned char* space)
+static void get_diff_amplitude_value(unsigned char *space)
 {
-	Rev_Data* revData_p = (Rev_Data*)space;
+	rev_data_t* rev_data_p = (rev_data_t*)space;
 	int  index;
 	
-	revData_p->diff_bodyPosition_amplitudeValue = 0; 
+	rev_data_p->diff_body_position_amplitude_value = 0; 
 	
-	for(index = 0; index < EVERY_VARIABLE_FEATURE_NUM; index ++ ) //compute body position amplitude value 
+	for(index = 0; index < EVERY_VARIABLE_FEATURE_NUM; index++) //compute body position amplitude value 
 	{
-		revData_p->diff_bodyPosition_amplitudeValue = revData_p->diff_bodyPosition_amplitudeValue + pow(revData_p->featureValue[index] - revData_p->former_featureValue[index],2); 
+		rev_data_p->diff_body_position_amplitude_value = rev_data_p->diff_body_position_amplitude_value + pow(rev_data_p->feature_value[index] - rev_data_p->former_feature_value[index],2); 
 	}
-	revData_p->diff_bodyPosition_amplitudeValue = sqrt(revData_p->diff_bodyPosition_amplitudeValue); 
+	rev_data_p->diff_body_position_amplitude_value = sqrt(rev_data_p->diff_body_position_amplitude_value); 
   	
 } 
 
 
-static void  amplitudeRankTest(unsigned char* space)
+static void amplitude_rank_test(unsigned char *space)
 {
-	 Rev_Data* revData_p = (Rev_Data*)space;
+	 rev_data_t* rev_data_p = (rev_data_t*)space;
 	 float  index;
 	 
-	 index = revData_p->diff_bodyPosition_amplitudeValue/diff_bodyPosition_amplitudeValue_ThresholdValue;
+	 index = rev_data_p->diff_body_position_amplitude_value/DIFF_BODYPOSITION_AMPLITUDEVALUE_THRESHODVALUE;
 	 
 	 if(index >= 1)
 	 {
@@ -190,99 +192,99 @@ static void  amplitudeRankTest(unsigned char* space)
 	 }
 	 else
 	 {
-	 	index = pow(10,index)-1; //amplitude_rank test function 
+	 	index = pow(10, index)-1; //amplitude_rank test function 
 	 } 
 	
 	 if(index-(int)index < 0.50)
 	 {
-	 	revData_p->bodyPosition_amplitudeValue_rank = (int)index;
+	 	rev_data_p->body_position_amplitude_rank = (int)index;
 	 }
 	 else
 	 {
-	 	revData_p->bodyPosition_amplitudeValue_rank = (int)index + 1;
+	 	rev_data_p->body_position_amplitude_rank = (int)index + 1;
 	 }	 
  } 
 
 
-static void   precise_identify_bodyPosition_style(unsigned char* space)
+static void precise_identify_body_position_style(unsigned char *space)
 {
    
-   Rev_Data* revData_p = (Rev_Data*)space;
+   rev_data_t* rev_data_p = (rev_data_t*)space;
    
-   revData_p->precise_bodyPosition_style = 0;
+   rev_data_p->precise_body_position_style = 0;
    	
-   if(revData_p->featureValue[2] <= FRONT_BODYPOSITION_THRESHOD_VALUE)
+   if(rev_data_p->feature_value[2] <= FRONT_BODYPOSITION_THRESHOD_VALUE)
 	{
 		
-		revData_p->precise_bodyPosition_style = 3; //front body position 
+		rev_data_p->precise_body_position_style = 3; //front body position 
 		 
 	}
 	
-	if(revData_p->featureValue[1] <= RIGHT_BODYPOSITION_THRESHOD_VALUE)
+	if(rev_data_p->feature_value[1] <= RIGHT_BODYPOSITION_THRESHOD_VALUE)
 	{
 		
-		revData_p->precise_bodyPosition_style = 4; //right body position 
+		rev_data_p->precise_body_position_style = 4; //right body position 
 		 
 	}
 	
-	if(revData_p->featureValue[1] >= LEFT_BODYPOSITION_THRESHOD_VALUE)
+	if(rev_data_p->feature_value[1] >= LEFT_BODYPOSITION_THRESHOD_VALUE)
 	{
 		
-		revData_p->precise_bodyPosition_style = 2; //left body position 
+		rev_data_p->precise_body_position_style = 2; //left body position 
 		 
 	}
 	
-	if(revData_p->featureValue[2] >= BACK_BODYPOSITION_THRESHOD_VALUE)
+	if(rev_data_p->feature_value[2] >= BACK_BODYPOSITION_THRESHOD_VALUE)
 	{
 		
-		revData_p->precise_bodyPosition_style = 1; // back body position 
+		rev_data_p->precise_body_position_style = 1; // back body position 
 		 
 	}
 	
-	if(revData_p->featureValue[0] <= STAND_BODYPOSITION_THRESHOD_VALUE)
+	if(rev_data_p->feature_value[0] <= STAND_BODYPOSITION_THRESHOD_VALUE)
 	{
 		
-		revData_p->precise_bodyPosition_style = 5;  //stand body position 
+		rev_data_p->precise_body_position_style = 5;  //stand body position 
 		 
 	}
 		
 } 
 
-void  capture_bodyPosition_Test(float* gx, float* gy, float* gz, int data_len, unsigned char* space)
+void  capture_body_position_test(float *gx, float *gy, float *gz, int data_len, unsigned char *space)
 {
 	     
-	     Rev_Data* revData_p = (Rev_Data*)space;
+	     rev_data_t* rev_data_p = (rev_data_t*)space;
 	     
-	     multiply_moving_filter(gx, data_len, revData_p->gx_movingFilterData);
-	     multiply_moving_filter(gy, data_len, revData_p->gy_movingFilterData);//movingfilter 
-	     multiply_moving_filter(gz, data_len,revData_p->gz_movingFilterData);
+	     multiply_moving_filter(gx, data_len, rev_data_p->gx_movingfilter_data);
+	     multiply_moving_filter(gy, data_len, rev_data_p->gy_movingfilter_data);//movingfilter 
+	     multiply_moving_filter(gz, data_len, rev_data_p->gz_movingfilter_data);
 	     
-	     getFeatureValue(space); //get feature value
+	     get_feature_value(space); //get feature value
 	     
-	   	 precise_identify_bodyPosition_style(space); //precise identify body position style
+	   	 precise_identify_body_position_style(space); //precise identify body position style
 		  
-	   	 getDiffAmplitudeValue(space); //get amplitudeValue 
+	   	 get_diff_amplitude_value(space); //get amplitudeValue 
 		
-	     copyFeatureValue(space); //copy feature value
+	     copy_feature_value(space); //copy feature value
 		  
-	     amplitudeRankTest(space); // amplitude rank test
+	     amplitude_rank_test(space); // amplitude rank test
 }
 	
 		
 
 
 
-int get_precise_bodyPosition_style(unsigned char* space)
+int get_precise_body_position_style(unsigned char *space)
 {
-	Rev_Data* revData_p = (Rev_Data*)space; 
+	rev_data_t* rev_data_p = (rev_data_t*)space; 
 	
-	return  revData_p->precise_bodyPosition_style; 
+	return  rev_data_p->precise_body_position_style; 
 }
 
 
-int get_AmplitudeValue_rank(unsigned char* space)
+int get_amplitude_rank(unsigned char *space)
 {
-	Rev_Data* revData_p = (Rev_Data*)space; 
+	rev_data_t* rev_data_p = (rev_data_t*)space; 
 	
-	return  revData_p->bodyPosition_amplitudeValue_rank; 
+	return  rev_data_p->body_position_amplitude_rank; 
 }

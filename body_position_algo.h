@@ -19,7 +19,7 @@ int get_precise_body_position_style(unsigned char *space); //get precise body po
 
 int get_amplitude_rank(unsigned char *space); //get amplitude rank 
 
-void FreePoint(unsigned char *space); //free space 
+void free_point(unsigned char *space); //free space 
 
 
 #endif
