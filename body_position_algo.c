@@ -7,14 +7,16 @@
 #define FILTER_TIMES                                                 5           //filter times 
 #define FILTER_LEN                                                   5           //the size of filter windows 
 #define CAPTURE_SIZE                                                 50          //the size of capture body position 
-#define EVERY_VARIABLE_FEATURE_NUM                                   3           // sum  features numbers 
+#define EVERY_VARIABLE_FEATURE_NUM                                   4           // sum  features numbers 
  
 #define DIFF_BODYPOSITION_AMPLITUDEVALUE_THRESHODVALUE               20000.00    // the threshold value of body position amplitudeValue   
-#define STAND_BODYPOSITION_THRESHOD_VALUE                           -11042.00f   //the threshold value of stand body position
+#define STAND_BODYPOSITION_THRESHOD_VALUE                           -10717.20f   //the threshold value of stand body position
 #define BACK_BODYPOSITION_THRESHOD_VALUE                             11788.00f   //the threshold value of back body position 
 #define LEFT_BODYPOSITION_THRESHOD_VALUE                             11714.00f   //the threshold value of left body position 
 #define FRONT_BODYPOSITION_THRESHOD_VALUE                           -11743.60f   //the threshold value of front body position 
 #define RIGHT_BODYPOSITION_THRESHOD_VALUE                           -11783.00f   //the threshold value of right body position
+#define DOWN_BODYPOSITION_THRESHOD_VALUE                             11172.40f   //the threshold value of downhead body position
+#define WALK_BODYPOSITION_THRESHOD_VALUE                             535.24f    //the threshold value of walk body position
 
 
 typedef struct rev_data_s
@@ -94,7 +96,7 @@ void free_point(unsigned char *space)
 }
 
 
-static float comput_mean_value(float *data_vector , int start , int len)
+static float comput_mean_value(float *data_vector, int start, int len)
 {
    float sum = 0.0;
    int index = 0;
@@ -107,6 +109,24 @@ static float comput_mean_value(float *data_vector , int start , int len)
    return(sum/len);
 	
 }
+
+static float comput_var_value(float *data_vector, int start, int len)
+{
+	float sum = 0.0;
+	int index = 0;
+	float mean_value = 0.0;
+	
+	mean_value = comput_mean_value(data_vector, 0, len);
+	
+	for(index = start; index < start + len; index++)
+	{
+		sum = sum + pow(data_vector[index]-mean_value,2);
+	}
+	
+	return sqrt(sum/(len-1));
+}
+
+
 
 
 static void multiply_moving_filter(float *initdata, int data_len, float *movingfilter_data) 
@@ -148,7 +168,8 @@ static void  get_feature_value(unsigned char *space)
     
 	rev_data_p->feature_value[0] = comput_mean_value(rev_data_p->gx_movingfilter_data, 0, CAPTURE_SIZE);//compute mean-value 
 	rev_data_p->feature_value[1] = comput_mean_value(rev_data_p->gy_movingfilter_data, 0, CAPTURE_SIZE);///compute mean-value  
-	rev_data_p->feature_value[2] = comput_mean_value(rev_data_p->gz_movingfilter_data, 0, CAPTURE_SIZE);///compute mean-value 	
+	rev_data_p->feature_value[2] = comput_mean_value(rev_data_p->gz_movingfilter_data, 0, CAPTURE_SIZE);///compute mean-value
+	rev_data_p->feature_value[3] = comput_var_value(rev_data_p->gx_movingfilter_data, 0, CAPTURE_SIZE);///compute var-value 	
 } 
 
 static void copy_feature_value(unsigned char *space)
@@ -170,7 +191,7 @@ static void get_diff_amplitude_value(unsigned char *space)
 	
 	rev_data_p->diff_body_position_amplitude_value = 0; 
 	
-	for(index = 0; index < EVERY_VARIABLE_FEATURE_NUM; index++) //compute body position amplitude value 
+	for(index = 0; index < EVERY_VARIABLE_FEATURE_NUM-1; index++) //compute body position amplitude value 
 	{
 		rev_data_p->diff_body_position_amplitude_value = rev_data_p->diff_body_position_amplitude_value + pow(rev_data_p->feature_value[index] - rev_data_p->former_feature_value[index],2); 
 	}
@@ -241,10 +262,24 @@ static void precise_identify_body_position_style(unsigned char *space)
 		 
 	}
 	
-	if(rev_data_p->feature_value[0] <= STAND_BODYPOSITION_THRESHOD_VALUE)
+	if(rev_data_p->feature_value[0] <= STAND_BODYPOSITION_THRESHOD_VALUE && rev_data_p->feature_value[3] < WALK_BODYPOSITION_THRESHOD_VALUE)
 	{
 		
 		rev_data_p->precise_body_position_style = 5;  //stand body position 
+		 
+	}
+	
+	if(rev_data_p->feature_value[0] <= STAND_BODYPOSITION_THRESHOD_VALUE && rev_data_p->feature_value[3] >= WALK_BODYPOSITION_THRESHOD_VALUE)
+	{
+		
+		rev_data_p->precise_body_position_style = 7;  //walk body position 
+		 
+	}
+	
+	if(rev_data_p->feature_value[0] >= DOWN_BODYPOSITION_THRESHOD_VALUE)
+	{
+		
+		rev_data_p->precise_body_position_style = 6;  //down body position 
 		 
 	}
 		
