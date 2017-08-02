@@ -16,7 +16,7 @@
 #define FRONT_BODYPOSITION_THRESHOD_VALUE                           -11743.60f   //the threshold value of front body position 
 #define RIGHT_BODYPOSITION_THRESHOD_VALUE                           -11783.00f   //the threshold value of right body position
 #define DOWN_BODYPOSITION_THRESHOD_VALUE                             11172.40f   //the threshold value of downhead body position
-#define WALK_BODYPOSITION_THRESHOD_VALUE                             535.24f    //the threshold value of walk body position
+#define WALK_BODYPOSITION_THRESHOD_VALUE                             1013.97f    //the threshold value of walk body position
 
 
 typedef struct rev_data_s
